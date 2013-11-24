@@ -4,6 +4,7 @@ APP_DIR=/opt/apps/shipyard
 ADMIN_PASS=${ADMIN_PASS:-}
 REDIS_HOST=${REDIS_HOST:-127.0.0.1}
 REDIS_PORT=${REDIS_PORT:-6379}
+DEBUG=${DEBUG:-False}
 DB_TYPE=${DB_TYPE:-sqlite3}
 DB_NAME=${DB_NAME:-shipyard.db}
 DB_USER=${DB_USER:-}
@@ -42,6 +43,8 @@ DATABASES = {
         'PORT': '${DB_PORT}',
     }
 }
+DEBUG = ${DEBUG}
+ALLOWED_HOSTS = ('*',)
 EOF
 # hipache config
 cat << EOF > $HIPACHE_CONFIG
@@ -208,6 +211,7 @@ events {
 }
 
 http {
+  include /usr/local/openresty/nginx/conf/mime.types;
   server {
     listen 8000;
     access_log $LOG_DIR/nginx_access.log;
@@ -218,6 +222,9 @@ http {
       proxy_set_header X-Forwarded-Host \$host;
       proxy_set_header X-Real-IP \$remote_addr;
       proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+    }
+    location /static {
+      alias $APP_DIR/static_root/;
     }
 
     location /console/ {
@@ -289,4 +296,5 @@ $VE_DIR/bin/python manage.py create_api_keys
 if [ ! -z "$ADMIN_PASS" ] ; then
     $VE_DIR/bin/python manage.py update_admin_user --username=admin --password=$ADMIN_PASS
 fi
+$VE_DIR/bin/python manage.py collectstatic --noinput
 supervisord -c $SUPERVISOR_CONF -n
