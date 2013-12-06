@@ -2,6 +2,7 @@
 APP_COMPONENTS="$*"
 APP_DIR=/opt/apps/shipyard
 ADMIN_PASS=${ADMIN_PASS:-}
+CELERY_WORKERS=${CELERY_WORKERS:-4}
 REDIS_HOST=${REDIS_HOST:-127.0.0.1}
 REDIS_PORT=${REDIS_PORT:-6379}
 DEBUG=${DEBUG:-False}
@@ -28,6 +29,23 @@ HIPACHE_SSL_CERT=${HIPACHE_SSL_CERT:-}
 HIPACHE_SSL_KEY=${HIPACHE_SSL_KEY:-}
 NGINX_RESOLVER=${NGINX_RESOLVER:-`cat /etc/resolv.conf | grep ^nameserver | head -1 | awk '{ print $2; }'`}
 SUPERVISOR_CONF=/opt/supervisor.conf
+
+echo "App Components: ${APP_COMPONENTS}"
+
+# check for db link
+if [ ! -z "$DB_PORT_5432_TCP_ADDR" ] ; then
+    DB_TYPE=postgresql_psycopg2
+    DB_NAME=${DB_ENV_DB_NAME:-shipyard}
+    DB_USER=${DB_ENV_DB_USER:-shipyard}
+    DB_PASS=${DB_ENV_DB_PASS:-shipyard}
+    DB_HOST=${DB_PORT_5432_TCP_ADDR}
+    DB_PORT=${DB_PORT_5432_TCP_PORT}
+fi
+# check for redis link
+if [ ! -z "$REDIS_PORT_6379_TCP_ADDR" ] ; then
+    REDIS_HOST=${REDIS_PORT_6379_TCP_ADDR:-$REDIS_HOST}
+    REDIS_PORT=${REDIS_PORT_6379_TCP_PORT:-$REDIS_PORT}
+fi
 mkdir -p $LOG_DIR
 cd $APP_DIR
 echo "REDIS_HOST=\"$REDIS_HOST\"" > $CONFIG
@@ -143,7 +161,7 @@ if [ -z "$APP_COMPONENTS" ] || [ ! -z "`echo $APP_COMPONENTS | grep master-worke
 [program:master-worker]
 priority=99
 directory=/opt/apps/shipyard
-command=/opt/ve/shipyard/bin/python manage.py celery worker -B --scheduler=djcelery.schedulers.DatabaseScheduler -E -c 4
+command=/opt/ve/shipyard/bin/python manage.py celery worker -B --scheduler=djcelery.schedulers.DatabaseScheduler -E -c ${CELERY_WORKERS}
 user=root
 autostart=true
 autorestart=true
@@ -158,7 +176,7 @@ if [ ! -z "`echo $APP_COMPONENTS | grep "^worker"`" ] ; then
 [program:worker]
 priority=99
 directory=/opt/apps/shipyard
-command=/opt/ve/shipyard/bin/python manage.py celery worker --scheduler=djcelery.schedulers.DatabaseScheduler -E -c 4
+command=/opt/ve/shipyard/bin/python manage.py celery worker --scheduler=djcelery.schedulers.DatabaseScheduler -E -c ${CELERY_WORKERS}
 user=root
 autostart=true
 autorestart=true
