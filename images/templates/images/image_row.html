@@ -1,0 +1,18 @@
+{% load i18n %}
+<tr>
+    <td>{{id|slice:":12"}}</td>
+    <td>{{repository}}</td>
+    <td>{{tag}}</td>
+    <td>{{host_name}}</td>
+    <td>
+        <div class="btn-group">
+            <a href="#" data-toggle="dropdown">
+                <span class="glyphicon glyphicon-cog"></span>
+                <span class="caret"></span>
+            </a>
+            <ul class="dropdown-menu right">
+                <li><a href="#" rel="tooltip" class="remove-image" data-url="{% url 'images.views.remove_image' host_id=host_id image_id=id %}">{% trans 'Remove Image' %}</a></li>
+            </ul>
+        </div>
+    </td>
+</tr>

@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% load i18n %}
 {% load shipyard %}
+{% load images %}
 
 {% block content %}
 <div id="dialog-import-image" class="modal">
@@ -78,6 +79,7 @@
             <tbody>
                 {% for h,host_images in images.items %}
                 {% for i in host_images %}
+                {% image_row h i "a" %}
                 <tr>
                     <td>{{i.Id|slice:":12"}}</td>
                     <td>{{i.Repository}}</td>
