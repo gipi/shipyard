@@ -139,10 +139,13 @@ class Host(models.Model):
         c = self._get_client()
         key = IMAGE_KEY.format(self.name)
         images = cache.get(key)
+        def check_not_intermediate(image):
+            repotags = image.get('RepoTags')
+            return (repotags is not None) and len(repotags) > 0
         if images is None:
             try:
                 # only show images with a repository name
-                images = [x for x in c.images(all=show_all) if x.get('Repository')]
+                images = [x for x in c.images(all=show_all) if check_not_intermediate(x)]
                 cache.set(key, images, HOST_CACHE_TTL)
             except requests.ConnectionError:
                 images = []
